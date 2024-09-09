@@ -39,6 +39,7 @@ const CustomTree = (props: {
 }) => {
     const [checked, setChecked] = useState<string[]>([])
     const [expanded, setExpanded] = useState<string[]>([])
+    const size = 12
 
     return <CheckboxTree
     nodes={getTasksByTrader(props.trader)}
@@ -51,11 +52,11 @@ const CustomTree = (props: {
     optimisticToggle={false}
     noCascade={true}
     icons={{
-        expandClose: <IconChevronDown />,
-        expandOpen: <IconChevronDown style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />,
-        check: <IconCheck />,
-        uncheck: <IconSquare />,
-        leaf: <Icon24Hours />,
+        expandClose: <IconChevronDown size={size} />,
+        expandOpen: <IconChevronDown size={size} style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />,
+        check: <IconCheck size={size} />,
+        uncheck: <IconSquare size={size} />,
+        leaf: <Icon24Hours size={size} />,
     }}
 />
 }
@@ -64,7 +65,7 @@ export function TaskList() {
     return (
         <>
             {/* <CustomTree localstorageKey="All" data={getAllTasks()} /> */}
-            <Tabs defaultValue="Therapist">
+            <Tabs defaultValue="Prapor">
                 <Tabs.List justify="center">
                     {traders.map((trader) => <Tabs.Tab key={trader} value={trader}>{trader}</Tabs.Tab>)}
                 </Tabs.List>
