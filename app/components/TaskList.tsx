@@ -1,8 +1,8 @@
 import { Checkbox, Group, RenderTreeNodePayload, Tabs, Tree, TreeNodeData, UseTreeInput, UseTreeReturnType } from "@mantine/core";
-import { IconChevronDown } from "@tabler/icons-react";
+import { Icon24Hours, IconCheck, IconChevronDown, IconSquare, IconSquareRoot } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAllTasks, getTasksByTrader, getTraders } from "utils/task";
-import { useTree } from "../hooks/useTree";
+import CheckboxTree from "react-checkbox-tree";
 
 const renderTreeNode = ({
     node,
@@ -35,33 +35,46 @@ const renderTreeNode = ({
 const traders = getTraders();
 
 const CustomTree = (props: {
-    localstorageKey: string
-    data: TreeNodeData[]
+    trader: string
 }) => {
-    const tree = useTree({
-        localstorageKey: props.localstorageKey
-    })
-    return <Tree data={props.data} levelOffset={23} expandOnClick={false} renderNode={renderTreeNode} tree={tree} />
+    const [checked, setChecked] = useState<string[]>([])
+    const [expanded, setExpanded] = useState<string[]>([])
+
+    return <CheckboxTree
+    nodes={getTasksByTrader(props.trader)}
+    checked={checked}
+    expanded={expanded}
+    onCheck={(checked) => setChecked(checked)}
+    onExpand={(expanded) => setExpanded(expanded)}
+    showExpandAll
+    showNodeIcon={false}
+    optimisticToggle={false}
+    noCascade={true}
+    icons={{
+        expandClose: <IconChevronDown />,
+        expandOpen: <IconChevronDown style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />,
+        check: <IconCheck />,
+        uncheck: <IconSquare />,
+        leaf: <Icon24Hours />,
+    }}
+/>
 }
 
 export function TaskList() {
-    
-
     return (
         <>
-            <CustomTree localstorageKey="All" data={getAllTasks()} />
-            {/* <Tabs defaultValue="Therapist">
+            {/* <CustomTree localstorageKey="All" data={getAllTasks()} /> */}
+            <Tabs defaultValue="Therapist">
                 <Tabs.List justify="center">
                     {traders.map((trader) => <Tabs.Tab key={trader} value={trader}>{trader}</Tabs.Tab>)}
                 </Tabs.List>
 
                 {traders.map((trader) => {
-                    const tree = useTree()
                     return <Tabs.Panel key={trader} value={trader}>
-                        <CustomTree localstorageKey={trader} data={getTasksByTrader(trader)} />
+                        <CustomTree trader={trader} />
                     </Tabs.Panel>
                 })}
-            </Tabs> */}
+            </Tabs>
         </>
   );
 }

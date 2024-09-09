@@ -6,6 +6,7 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 import '@mantine/core/styles.css'
+import 'react-checkbox-tree/lib/react-checkbox-tree.css'
 import { Center, Container, Loader, MantineProvider } from "@mantine/core";
 
 export function Layout({ children }: { children: React.ReactNode }) {
