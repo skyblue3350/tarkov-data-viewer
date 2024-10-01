@@ -23,23 +23,28 @@ const traderOrder = (array: string[]): string[] => {
     })
 }
 
-interface TaskTreeNodeData extends TreeNodeData {
-    data: typeof taskData.data.tasks[0]
+interface TaskTreeNodeData {
+    name: string
     children?: TaskTreeNodeData[]
+    attributes?: {[key: string]: string}
 }
 
 export const getTraders = ():string[] => {
     return traderOrder(Array.from(new Set(taskData.data.tasks.map((task) => task.trader.name))))
 }
 
-const convertTaskListToTree = (taskList: TarkovTask[], trader?: string): TreeNodeData[] => {
-    const taskMap: {[key: string]: TreeNodeData} = {}
+const convertTaskListToTree = (taskList: TarkovTask[], trader?: string): TaskTreeNodeData[] => {
+    const taskMap: {[key: string]: TaskTreeNodeData} = {}
 
     // 初期化
     taskList.forEach(task => {
         taskMap[task.id] = {
-            label: `${task.name}`,
-            value: task.id,
+            name: `${task.name}`,
+            attributes: {
+                id: task.id,
+                trader: task.trader.name,
+                wikiLink: task.wikiLink,
+            },
             children: []
         }
     })
@@ -56,25 +61,25 @@ const convertTaskListToTree = (taskList: TarkovTask[], trader?: string): TreeNod
     if (trader) {
         const ownerTask = taskList.filter(task => task.trader.name === trader)
 
-        const rootNodes: TreeNodeData[] = ownerTask.map(task => taskMap[task.id])
+        const rootNodes: TaskTreeNodeData[] = ownerTask.map(task => taskMap[task.id])
 
         return removeDuplicateNodes(rootNodes)
 
     } else {
-        const rootNodes: TreeNodeData[] = taskList.filter(task => task.taskRequirements.every(req => !taskMap[req.task.id].children?.includes(taskMap[task.id]))).map(task => taskMap[task.id])
+        const rootNodes: TaskTreeNodeData[] = taskList.filter(task => task.taskRequirements.every(req => !taskMap[req.task.id].children?.includes(taskMap[task.id]))).map(task => taskMap[task.id])
         return rootNodes
     }
 }
 
-const removeDuplicateNodes = (tree: TreeNodeData[]): TreeNodeData[] => {
+const removeDuplicateNodes = (tree: TaskTreeNodeData[]): TaskTreeNodeData[] => {
     const seen = new Set<string>()
 
-    function checkAndRmoveDuplicates(nodes: TreeNodeData[]): TreeNodeData[] {
+    function checkAndRmoveDuplicates(nodes: TaskTreeNodeData[]): TaskTreeNodeData[] {
         return nodes.filter(node => {
-            if (seen.has(node.value)) {
+            if (seen.has(node.name)) {
                 return false
             }
-            seen.add(node.value)
+            seen.add(node.name)
             node.children = checkAndRmoveDuplicates(node.children!)
             return true
         })
@@ -83,13 +88,28 @@ const removeDuplicateNodes = (tree: TreeNodeData[]): TreeNodeData[] => {
     return checkAndRmoveDuplicates(tree)
 }
 
-const removeEmptyChildren = (tree: TreeNodeData[]): TreeNodeData[] => {
+const removeEmptyChildren = (tree: TaskTreeNodeData[]): TaskTreeNodeData[] => {
     return tree.map(node => {
         if (node.children && node.children.length === 0) {
             delete node.children
         }
         return node
     })
+}
+
+export const getTaskById = (id: string, node: TaskTreeNodeData): TaskTreeNodeData | undefined => {
+    if (node.data.id === id) {
+        return node
+    }
+    if (node.children) {
+        for (const child of node.children) {
+            const result = getTaskById(id, child)
+            if (result) {
+                return result
+            }
+        }
+    }
+    return undefined
 }
 
 export const getTasksByTrader = (trader:string) => {

@@ -1,70 +1,39 @@
-import { Checkbox, Group, RenderTreeNodePayload, Tabs, Tree, TreeNodeData, UseTreeInput, UseTreeReturnType } from "@mantine/core";
+import { Box, Checkbox, Group, RenderTreeNodePayload, Tabs, TreeNodeData, UseTreeInput, UseTreeReturnType } from "@mantine/core";
 import { Icon24Hours, IconCheck, IconChevronDown, IconSquare, IconSquareRoot } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAllTasks, getTasksByTrader, getTraders } from "utils/task";
 import CheckboxTree from "react-checkbox-tree";
-
-const renderTreeNode = ({
-    node,
-    expanded,
-    hasChildren,
-    elementProps,
-    tree,
-  }: RenderTreeNodePayload) => {
-    const checked = tree.isNodeChecked(node.value);
-    
-    return (
-      <Group gap="xs" {...elementProps}>
-        <Checkbox.Indicator
-          checked={checked}
-          indeterminate={false}
-          onClick={() => {checked ? tree.uncheckNode(node.value) : tree.checkNode(node.value)}}
-        />
-  
-        <Group gap={5} onClick={() => tree.toggleExpanded(node.value)}>
-          <span>{node.label}</span>
-            {hasChildren && <IconChevronDown
-              size={18}
-              style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
-            />}
-        </Group>
-      </Group>
-    );
-  };
+import TreeView, { flattenTree, NodeId } from "react-accessible-treeview";
+import Tree, { CustomNodeElementProps } from "react-d3-tree";
 
 const traders = getTraders();
 
 const CustomTree = (props: {
     trader: string
 }) => {
-    const [checked, setChecked] = useState<string[]>([])
-    const [expanded, setExpanded] = useState<string[]>([])
-    const size = 12
+    const [selected, setSelected] = useState<NodeId[]>([])
 
-    return <CheckboxTree
-    nodes={getTasksByTrader(props.trader)}
-    checked={checked}
-    expanded={expanded}
-    onCheck={(checked) => setChecked(checked)}
-    onExpand={(expanded) => setExpanded(expanded)}
-    showExpandAll
-    showNodeIcon={false}
-    optimisticToggle={false}
-    noCascade={true}
-    icons={{
-        expandClose: <IconChevronDown size={size} />,
-        expandOpen: <IconChevronDown size={size} style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />,
-        check: <IconCheck size={size} />,
-        uncheck: <IconSquare size={size} />,
-        leaf: <Icon24Hours size={size} />,
-    }}
-/>
+    const renderRectSvgNode = useCallback(({nodeDatum, onNodeClick}: CustomNodeElementProps) => {
+        return (
+            <g>
+                <rect width="250" height="100" x="-100" y="-50" onClick={(e) => onNodeClick(e)} fill={selected.includes(nodeDatum.attributes!.id.toString()) ? "#697565" : "#ECDFCC"} />
+                <text fill="black" strokeWidth="1" x="-90" y="-25">{nodeDatum.name}</text>
+                <a href={nodeDatum.attributes?.wikiLink.toString()} target="_blank"><text x="-90" y="0" strokeWidth="1" fill="blue">wiki</text></a>
+                <text fill="black" strokeWidth="1" x="-90" y="25">Trader: {nodeDatum.attributes!.trader}</text>
+            </g>
+        )
+    }, [selected])
+
+    const data = getTasksByTrader(props.trader)
+    return (<Box style={{width: "100%", height: "100vh", background: 'white'}}><Tree nodeSize={{x: 300, y:200}} renderCustomNodeElement={renderRectSvgNode} onNodeClick={(node, e) => {
+        console.log(node.data.attributes!.id)
+        setSelected(selected.includes(node.data.attributes!.id.toString()) ? selected.filter((id) => id !== node.data.attributes!.id.toString()) : [...selected, node.data.attributes!.id.toString()])
+    }} collapsible={false} pathFunc={"step"} orientation={"vertical"}  data={data} /></Box>)
 }
 
 export function TaskList() {
     return (
         <>
-            {/* <CustomTree localstorageKey="All" data={getAllTasks()} /> */}
             <Tabs defaultValue="Prapor">
                 <Tabs.List justify="center">
                     {traders.map((trader) => <Tabs.Tab key={trader} value={trader}>{trader}</Tabs.Tab>)}
